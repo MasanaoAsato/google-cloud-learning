@@ -51,7 +51,7 @@ variable "crun_max_instance_count" {
 
 variable "crun_timeout_seconds" {
   description = "Timeout in seconds for Cloud Run service"
-  type        = number
+  type        = string
 
-  default = 30
+  default = "30s"
 }

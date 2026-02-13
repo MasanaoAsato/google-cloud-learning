@@ -10,9 +10,10 @@ data "google_iam_policy" "noauth" {
 
 
 resource "google_cloud_run_v2_service" "default" {
-  name     = "${var.prefix}-cloud-run-service"
-  location = var.location
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  name                = "${var.prefix}-cloud-run-service"
+  location            = var.location
+  ingress             = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+  deletion_protection = false
 
   template {
     containers {

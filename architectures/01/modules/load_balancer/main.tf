@@ -114,13 +114,13 @@ resource "google_compute_ssl_policy" "ssl_policy" {
 
 # 8. HTTPSプロキシ
 resource "google_compute_target_https_proxy" "https" {
-  name          = "proxy-${var.prefix}}-https"
+  name          = "proxy-${var.prefix}-https"
   url_map       = google_compute_url_map.https.id
   ssl_policy    = google_compute_ssl_policy.ssl_policy.id
   quic_override = "NONE"
 
   # Certificate Mapを参照
-  certificate_map = "//certificatemanager.googleapis.com/${google_certificate_manager_certificate_map.default.id}"
+  certificate_map = "//certificatemanager.googleapis.com/${google_certificate_manager_certificate_map.lb.id}"
 }
 
 # 9. HTTP Forwarding Rule (ポート80)
