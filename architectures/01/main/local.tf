@@ -1,8 +1,8 @@
 locals {
   # General values
-  prefix     = "test"
-  location   = "asia-northeast1"
-  region     = "asia-northeast1"
+  prefix   = "test"
+  location = "asia-northeast1"
+  region   = "asia-northeast1"
 
   # Cloud DNS values
   dns_managed_zone_name     = "example-zone"
