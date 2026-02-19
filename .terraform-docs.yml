@@ -1,0 +1,10 @@
+formatter: markdown document
+recursive:
+  enabled: true
+output:
+  file: README_TERRAFORM_DOCS.md
+  mode: inject
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
