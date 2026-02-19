@@ -1,0 +1,29 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: set up mise
+      uses: jdx/mise-action@v3
+      with:
+        install: true
+        cache: true
+    
+    - name: Terraform Formatter
+      run: terraform fmt -check -recursive
+
+    - name: Terraform lint
+      run: tflint --recursive --config=$(pwd)/.tflint.hcl
+
+    
