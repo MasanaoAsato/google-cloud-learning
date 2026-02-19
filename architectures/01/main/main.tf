@@ -29,13 +29,14 @@ module "load_balancer" {
 }
 
 module "cloud_dns" {
-  source                = "../modules/cloud_dns"
-  dns_managed_zone_name = local.dns_managed_zone_name
-  domain_name           = local.certification_map_entry_hostname
-  lb_ip_address         = module.load_balancer.lb_ip_address
-  dns_auth_record_name  = module.load_balancer.dns_auth_record_name
-  dns_auth_record_type  = module.load_balancer.dns_auth_record_type
-  dns_auth_record_data  = module.load_balancer.dns_auth_record_data
+  source                    = "../modules/cloud_dns"
+  dns_managed_zone_name     = local.dns_managed_zone_name
+  dns_managed_zone_dns_name = local.dns_managed_zone_dns_name
+  domain_name               = local.certification_map_entry_hostname
+  lb_ip_address             = module.load_balancer.lb_ip_address
+  dns_auth_record_name      = module.load_balancer.dns_auth_record_name
+  dns_auth_record_type      = module.load_balancer.dns_auth_record_type
+  dns_auth_record_data      = module.load_balancer.dns_auth_record_data
 
   depends_on = [module.load_balancer]
 }

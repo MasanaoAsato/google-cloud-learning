@@ -27,3 +27,8 @@ variable "dns_auth_record_data" {
   description = "The data of the DNS record for key authorization."
   type        = string
 }
+
+variable "dns_managed_zone_dns_name" {
+  description = "The DNS name for the managed zone (e.g., example.com.)."
+  type        = string
+}
