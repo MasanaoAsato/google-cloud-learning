@@ -1,7 +1,6 @@
 locals {
   # General values
   prefix     = "test"
-  project_id = "your-gcp-project-id"
   location   = "asia-northeast1"
   region     = "asia-northeast1"
 
