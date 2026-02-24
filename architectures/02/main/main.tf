@@ -24,7 +24,7 @@ module "cloud_sql" {
   disk_autoresize_limit = local.disk_autoresize_limit
   db_user_name          = local.db_user_name
 
-  depends_on = [module.secret_manager]
+  depends_on = [module.secret_manager, module.network]
 }
 
 module "service_account" {
