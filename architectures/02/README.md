@@ -84,6 +84,9 @@ terraform apply
 - Cloud SQL を Public IP で公開しないこと。可能であれば Private IP を利用して VPC 内から接続する構成を推奨します。
 - `Secret Manager` を使い、DB の資格情報は平文でソース管理しないでください。
 - サービスアカウントは最小権限で付与し、Cloud Run に必要なロールのみを与えること（例：Cloud SQL Client ロール）。
+- Cloud Run（Direct VPC Egress）+Cloud SQL(VPC Peering) + VPCの構成 terraform destroyが依存の問題で正常に動作しない
+- 内部静的IPアドレスの開放はCloud Run削除時に行われるはずだがラグがありこれに依存するVPCやサブネットが削除できなくなるので待つか、手動で削除する（数分～数時間）
+- Cloud SQL削除後も、VPCネットワークピアリングが残るバグがあるので手動で消す。
 - テスト後は不要な課金を避けるために `terraform destroy` でリソースを削除してください。
 
 ---
