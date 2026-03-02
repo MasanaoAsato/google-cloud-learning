@@ -13,11 +13,11 @@ resource "google_compute_subnetwork" "subnet_direct_vpc_egress" {
 resource "google_compute_global_address" "default" {
   #provider     = google-beta
 
-  name         = "private-vpc-peering-ip"
-  address_type = "INTERNAL"
-  purpose      = "VPC_PEERING"
-  network      = google_compute_network.vpc_network.id
-  address      = "10.10.0.0"
+  name          = "private-vpc-peering-ip"
+  address_type  = "INTERNAL"
+  purpose       = "VPC_PEERING"
+  network       = google_compute_network.vpc_network.id
+  address       = "10.10.0.0"
   prefix_length = 24
 }
 
