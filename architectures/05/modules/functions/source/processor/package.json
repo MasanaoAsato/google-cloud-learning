@@ -1,0 +1,10 @@
+{
+  "name": "processor",
+  "version": "1.0.0",
+  "description": "Event processor: Cloud Storage -> Pub/Sub",
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.0.0",
+    "@google-cloud/pubsub": "^4.0.0"
+  }
+}

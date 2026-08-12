@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 — Eventarc と Pub/Sub：配送の失敗を誰が引き受けるか | google-cloud-learning</title>
+<style>
+  :root {
+    --bg: #fbfbfa;
+    --surface: #ffffff;
+    --surface-2: #f4f5f7;
+    --border: #e3e5e8;
+    --text: #1d2025;
+    --text-dim: #5b6270;
+    --accent: #2f6fd0;
+    --accent-soft: #e8f0fc;
+    --warn: #b4560c;
+    --warn-soft: #fdf1e4;
+    --ok: #1f7a4d;
+    --code-bg: #1e2229;
+    --code-text: #e6e9ef;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c;
+      --surface: #1b1f26;
+      --surface-2: #23282f;
+      --border: #333a44;
+      --text: #e7eaee;
+      --text-dim: #a2abb8;
+      --accent: #7bafff;
+      --accent-soft: #1d2b40;
+      --warn: #e3a25f;
+      --warn-soft: #33261a;
+      --ok: #63c491;
+      --code-bg: #0f1216;
+      --code-text: #e6e9ef;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+    font-size: 15px;
+    line-height: 1.85;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* ---------- ヘッダー ---------- */
+  .hero { padding: 48px 0 24px; border-bottom: 1px solid var(--border); }
+  .hero .num {
+    display: inline-block; font-size: 12px; letter-spacing: .12em; font-weight: 700;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 4px 12px; border-radius: 999px;
+  }
+  .hero h1 { font-size: 27px; line-height: 1.45; margin: 14px 0 10px; letter-spacing: -.01em; }
+  .hero .lead { color: var(--text-dim); margin: 0; font-size: 15.5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .chip {
+    font-size: 12.5px; padding: 4px 11px; border-radius: 6px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim);
+  }
+  .chip.cost { color: var(--warn); background: var(--warn-soft); border-color: transparent; font-weight: 600; }
+
+  /* ---------- ナビ ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  nav ul { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0; padding: 10px 0; }
+  nav a {
+    font-size: 13px; color: var(--text-dim); text-decoration: none;
+    padding: 5px 10px; border-radius: 6px;
+  }
+  nav a:hover { color: var(--accent); background: var(--accent-soft); }
+
+  /* ---------- セクション共通 ---------- */
+  section { margin-bottom: 52px; scroll-margin-top: 64px; }
+  h2 {
+    font-size: 19px; margin: 0 0 6px; padding-bottom: 10px;
+    border-bottom: 2px solid var(--border); letter-spacing: -.01em;
+  }
+  .section-note { color: var(--text-dim); font-size: 13.5px; margin: 8px 0 24px; }
+  h3 { font-size: 16px; margin: 0 0 8px; line-height: 1.6; }
+  p { margin: 0 0 12px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 22px; margin-bottom: 16px;
+  }
+
+  /* ---------- 学びポイント ---------- */
+  .learn { display: flex; gap: 16px; }
+  .learn .idx {
+    flex: 0 0 30px; height: 30px; border-radius: 8px;
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .learn .body { flex: 1; min-width: 0; }
+  .learn p:last-child { margin-bottom: 0; }
+  .link-check {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--accent); text-decoration: none;
+    border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+    border-radius: 6px; padding: 3px 10px; margin-top: 10px;
+  }
+  .link-check:hover { background: var(--accent-soft); border-style: solid; }
+
+  /* ---------- 構成 ---------- */
+  .diagram { margin: 4px 0 20px; }
+  .diagram a {
+    display: block; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; text-align: center; text-decoration: none;
+  }
+  .diagram img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  .diagram .cap { display: block; font-size: 12.5px; color: var(--text-dim); margin-top: 10px; }
+
+  .flow { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 24px; }
+  .flow-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .node {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 13px; font-size: 13.5px; font-weight: 600; white-space: nowrap;
+  }
+  .node.dim { font-weight: 500; color: var(--text-dim); }
+  .arrow { color: var(--text-dim); font-size: 13px; white-space: nowrap; }
+  .arrow b { color: var(--text); font-weight: 600; }
+  .flow-row.indent { padding-left: 28px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 0 0 8px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .04em; color: var(--text-dim); font-weight: 600; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  td code, p code, li code { font-size: 12.5px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px;
+  }
+
+  /* ---------- コードブロック ---------- */
+  .code { position: relative; margin: 10px 0 14px; }
+  .code pre {
+    margin: 0; background: var(--code-bg); color: var(--code-text);
+    border-radius: 8px; padding: 15px 17px; overflow-x: auto;
+    font-size: 12.5px; line-height: 1.7;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .code pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+  .copy {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255,255,255,.08); color: #cfd6e0;
+    border: 1px solid rgba(255,255,255,.16); border-radius: 5px;
+    font-size: 11px; padding: 3px 9px; cursor: pointer; opacity: 0; transition: opacity .15s;
+  }
+  .code:hover .copy, .copy:focus { opacity: 1; }
+  .copy:hover { background: rgba(255,255,255,.16); }
+
+  /* ---------- 検証シナリオ ---------- */
+  .check { border-left: 3px solid var(--accent); }
+  .check .tag {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--accent);
+    text-transform: uppercase;
+  }
+  .step-label {
+    font-size: 12px; font-weight: 700; color: var(--text-dim);
+    letter-spacing: .04em; margin: 16px 0 4px;
+  }
+  .expect {
+    background: var(--surface-2); border-radius: 8px; padding: 12px 15px;
+    font-size: 13.5px; margin: 4px 0 0;
+  }
+  .expect ul { margin: 0; padding-left: 20px; }
+  .expect li { margin-bottom: 4px; }
+  .insight {
+    border-left: 3px solid var(--ok); background: color-mix(in srgb, var(--ok) 8%, transparent);
+    border-radius: 0 8px 8px 0; padding: 12px 15px; font-size: 14px; margin-top: 6px;
+  }
+  .link-back { font-size: 12.5px; color: var(--text-dim); text-decoration: none; }
+  .link-back:hover { color: var(--accent); }
+
+  /* ---------- 注意 ---------- */
+  .pitfall { border-left: 3px solid var(--warn); }
+  .pitfall h3 { color: var(--warn); font-size: 15px; }
+
+  /* ---------- 理解度チェック ---------- */
+  .selfcheck { list-style: none; margin: 0; padding: 0; }
+  .selfcheck li {
+    display: flex; gap: 11px; align-items: flex-start;
+    padding: 11px 0; border-bottom: 1px dashed var(--border); font-size: 14.5px;
+  }
+  .selfcheck li:last-child { border-bottom: none; }
+  .selfcheck input { margin-top: 6px; flex: 0 0 auto; accent-color: var(--accent); }
+  .selfcheck input:checked + span { color: var(--text-dim); text-decoration: line-through; }
+
+  /* ---------- リンク ---------- */
+  .links { list-style: none; margin: 0; padding: 0; }
+  .links li { padding: 7px 0; font-size: 14px; }
+  .links a { color: var(--accent); }
+  .links .desc { color: var(--text-dim); font-size: 13px; }
+
+  footer {
+    margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 12.5px;
+  }
+
+  /* ---------- 印刷 ---------- */
+  @media print {
+    :root {
+      --bg: #fff; --surface: #fff; --surface-2: #f6f6f6; --border: #ccc;
+      --text: #000; --text-dim: #444; --accent: #14459c; --accent-soft: #eef3fb;
+      --code-bg: #f4f4f4; --code-text: #000;
+    }
+    body { font-size: 10.5pt; line-height: 1.65; }
+    nav, .copy { display: none; }
+    .wrap { max-width: none; padding: 0; }
+    .hero { padding-top: 0; }
+    .card, .code, .flow, .diagram, table { break-inside: avoid; page-break-inside: avoid; }
+    .diagram img { max-height: 320px; }
+    section { break-inside: auto; margin-bottom: 26px; }
+    h2 { break-after: avoid; }
+    .code pre { border: 1px solid #ddd; white-space: pre-wrap; word-break: break-all; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="num">ARCHITECTURE 05</span>
+  <h1>Eventarc と Pub/Sub：配送の失敗を誰が引き受けるか</h1>
+  <p class="lead">GCS へのアップロードを 2 段の Cloud Functions Gen2 に流す。前段は Eventarc トリガー、後段はあえて Pub/Sub の Push サブスクリプションを自分で書いてある。同じ「イベントで関数を起動する」でも、失敗したメッセージの行き先が違うことを実測で確かめるテーマ。</p>
+  <div class="chips">
+    <span class="chip">Cloud Functions Gen2 (nodejs22)</span>
+    <span class="chip">Eventarc</span>
+    <span class="chip">Pub/Sub + DLQ</span>
+    <span class="chip">asia-northeast1</span>
+    <span class="chip cost">min_instance = 0 なので待機課金は無い。ただし GCS 3 バケット・関数イメージ・DLQ 滞留メッセージは残る</span>
+  </div>
+</header>
+
+<nav>
+  <ul>
+    <li><a href="#learn">学ぶこと</a></li>
+    <li><a href="#stack">構成</a></li>
+    <li><a href="#design">設計の要点</a></li>
+    <li><a href="#checks">確認のしかた</a></li>
+    <li><a href="#pitfalls">後始末・つまずき</a></li>
+    <li><a href="#selfcheck">理解度チェック</a></li>
+    <li><a href="#refs">参考</a></li>
+  </ul>
+</nav>
+
+<!-- ============ 2. このテーマで学ぶこと ============ -->
+<section id="learn">
+  <h2>このテーマで学ぶこと</h2>
+  <p class="section-note">各項目には、それを自分の目で確かめる手順が紐づいている。</p>
+
+  <div class="card learn" id="learn-1">
+    <div class="idx">1</div>
+    <div class="body">
+      <h3>Eventarc トリガーと自作 Push サブスクリプションでは、握れる「失敗時の挙動」が違う</h3>
+      <p>GCS → processor は <code>google_eventarc_trigger</code>、processor → subscriber は <code>google_pubsub_subscription</code> の <code>push_config</code> で繋いである。後者を手で書いたからこそ <code>dead_letter_policy</code> と <code>retry_policy</code>（10s〜600s のバックオフ）が指定できる。Eventarc トリガー側は <code>retry_policy.max_attempts</code> しか持たず、しかもこのコードでは <code>1</code> にしてある。</p>
+      <a class="link-check" href="#check-1">→ 確認 1：2 つの配送経路の設定を並べて見る</a>
+    </div>
+  </div>
+
+  <div class="card learn" id="learn-2">
+    <div class="idx">2</div>
+    <div class="body">
+      <h3>DLQ は「5 回失敗したあと」に初めて動く。保持設計もそこだけ別扱いにする</h3>
+      <p><code>max_delivery_attempts = 5</code> なので、1 回落ちただけでは DLQ に行かない。通常トピックの保持が 1 日（<code>86600s</code>）なのに対し DLQ は 7 日（<code>604800s</code>）、監視用の <code>test-dlq-monitor</code> は <code>retain_acked_messages = true</code> かつ <code>expiration_policy.ttl = ""</code>（無期限）。失敗を「その場で捌く」のではなく「後から解析する」ための持ち方になっている。</p>
+      <a class="link-check" href="#check-2">→ 確認 2：わざと失敗させて DLQ に落とす</a>
+    </div>
+  </div>
+
+  <div class="card learn" id="learn-3">
+    <div class="idx">3</div>
+    <div class="body">
+      <h3>自分で作った SA に権限を付けるだけでは動かない — Google 管理のサービスエージェントに渡す権限がある</h3>
+      <p><code>modules/service_account</code> が作る SA は 3 つだが、<code>modules/iam</code> はそれ以外に GCS サービスエージェントへ <code>pubsub.publisher</code>（Eventarc の GCS イベントは裏で Pub/Sub を通るため）、Pub/Sub サービスエージェントへ DLQ トピックの <code>publisher</code> と <code>eventarc_invoker_sa</code> への <code>iam.serviceAccountTokenCreator</code>（Push の OIDC トークンを発行するためのなりすまし）を与えている。「動かないときはまずサービスエージェントを疑う」という嗅覚がここで身につく。</p>
+      <a class="link-check" href="#check-3">→ 確認 3：サービスエージェントに付いた権限を目視する</a>
+    </div>
+  </div>
+
+  <div class="card learn" id="learn-4">
+    <div class="idx">4</div>
+    <div class="body">
+      <h3>ingress（ネットワーク到達性）と run.invoker（認証）は別レイヤ</h3>
+      <p>両関数とも <code>ingress_settings = "ALLOW_INTERNAL_ONLY"</code> で、外から URI を直接叩いても届かない。それでも Eventarc と Pub/Sub Push は、同一プロジェクトかつ <code>run.app</code> URL 宛であれば内部トラフィックとして扱われるので処理は流れる。外部に一切公開せずイベント駆動を組めるのはこの性質による。</p>
+      <a class="link-check" href="#check-4">→ 確認 4：直叩きは弾かれるのに GCS 経由では動く</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. 何を作ったか ============ -->
+<section id="stack">
+  <h2>何を作ったか</h2>
+  <p class="section-note">input バケットへのアップロードを起点に、processor がメタデータを Pub/Sub へ publish し、subscriber が output バケットへ JSON を書く 2 段パイプライン。</p>
+
+  <div class="diagram">
+    <a href="architecture.svg" target="_blank" rel="noopener">
+      <img src="architecture.svg" alt="05 の構成図">
+      <span class="cap">architecture.svg（クリックで拡大）</span>
+    </a>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>モジュール</th><th>役割</th><th>効いている設定</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>modules/apis</code></td>
+        <td>必要な API を有効化</td>
+        <td><code>disable_on_destroy = false</code> / 7 API</td>
+      </tr>
+      <tr>
+        <td><code>modules/service_account</code></td>
+        <td>処理用 2 つ + 呼び出し用 1 つの SA</td>
+        <td><code>test-gcf-processor-sa</code> / <code>-subscriber-sa</code> / <code>-eventarc-invoker-sa</code></td>
+      </tr>
+      <tr>
+        <td><code>modules/storage</code></td>
+        <td>input / output / 関数ソース用の 3 バケット</td>
+        <td><code>test-{input,output,functions-source}-&lt;プロジェクト番号&gt;</code>、全て <code>force_destroy = true</code></td>
+      </tr>
+      <tr>
+        <td><code>modules/topics</code></td>
+        <td>出力トピック・DLQ トピック・DLQ 監視用 Pull サブスク</td>
+        <td>保持 <code>86600s</code> / DLQ <code>604800s</code>、<code>retain_acked_messages = true</code></td>
+      </tr>
+      <tr>
+        <td><code>modules/functions</code></td>
+        <td>processor / subscriber の Gen2 関数と ZIP 配置</td>
+        <td><code>256M</code> / <code>timeout 60s</code> / <code>max 3</code> / <code>min 0</code> / <code>ALLOW_INTERNAL_ONLY</code></td>
+      </tr>
+      <tr>
+        <td><code>modules/triggers</code></td>
+        <td>GCS→processor の Eventarc、Pub/Sub→subscriber の Push サブスク</td>
+        <td>Eventarc <code>max_attempts = 1</code> ⇔ Push <code>max_delivery_attempts = 5</code> + backoff <code>10s〜600s</code></td>
+      </tr>
+      <tr>
+        <td><code>modules/iam</code></td>
+        <td>自作 SA + Google 管理サービスエージェントへの権限付与</td>
+        <td><code>gs-project-accounts</code> → <code>pubsub.publisher</code>、<code>gcp-sa-pubsub</code> → <code>serviceAccountTokenCreator</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 4. 設計の要点 ============ -->
+<section id="design">
+  <h2>設計の要点</h2>
+  <p class="section-note">「そう書いてある」ではなく「そう書いた理由」。裏取りできていないものは仮説と明記する。</p>
+
+  <div class="card">
+    <h3>後段だけ Eventarc を使わず Push サブスクリプションを手書きしている</h3>
+    <p><code>google_eventarc_trigger</code> は <code>retry_policy.max_attempts</code> しか持たず、DLQ の受け皿を指定できない。DLQ とバックオフを効かせたい区間だけサブスクリプションを自分で定義する、という切り分けになっている。前段を <code>max_attempts = 1</code> にしてあるのは、その対比を出すための意図的な設定と読める（仮説）。</p>
+  </div>
+
+  <div class="card">
+    <h3>ソース ZIP のオブジェクト名に <code>output_md5</code> を埋め込む</h3>
+    <p><code>processor-${data.archive_file.processor.output_md5}.zip</code> のように名前へハッシュを入れてある。名前が固定だと <code>index.js</code> を書き換えても <code>google_storage_bucket_object</code> の属性しか変わらず、関数の再デプロイが走らない。Terraform で Functions を扱うときの定番の回避策。</p>
+  </div>
+
+  <div class="card">
+    <h3>学習用の割り切り</h3>
+    <p>3 バケットとも <code>force_destroy = true</code>、<code>project_id</code> は <code>"your-project-id"</code> のままのプレースホルダ、<code>main/</code> に <code>outputs.tf</code> が無い（apply 後の値は <code>gcloud</code> で引く）。本番運用ではいずれもそのままにしない。</p>
+  </div>
+</section>
+
+<!-- ============ 5. どう確認するか ============ -->
+<section id="checks">
+  <h2>どう確認するか</h2>
+  <p class="section-note"><code>main/</code> に <code>outputs.tf</code> が無いので、バケット名はプロジェクト番号から組み立てる。</p>
+
+  <div class="card">
+    <h3>共通の準備</h3>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>PROJECT_ID=$(gcloud config get-value project)
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+REGION=asia-northeast1
+INPUT_BUCKET="test-input-$PROJECT_NUMBER"; OUTPUT_BUCKET="test-output-$PROJECT_NUMBER"
+echo '{"hello":"05"}' &gt; /tmp/t.json</code></pre>
+    </div>
+  </div>
+
+  <div class="card check" id="check-1">
+    <span class="tag">確認 1</span>
+    <h3>2 つの配送経路の設定を並べて見る</h3>
+    <p>同じ「イベントで関数を起動する」経路が、失敗時にどこまで面倒を見るかを設定の差として確かめる。 <a class="link-back" href="#learn-1">↑ 学び 1</a></p>
+
+    <div class="step-label">手順</div>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>gcloud eventarc triggers describe test-gcs-to-processor --location="$REGION" \
+  --format='yaml(eventFilters, destination.cloudRun.service, retryPolicy)'
+
+gcloud pubsub subscriptions describe test-subscriber \
+  --format='yaml(pushConfig.pushEndpoint, deadLetterPolicy, retryPolicy)'</code></pre>
+    </div>
+
+    <div class="step-label">期待される結果</div>
+    <div class="expect">
+      <ul>
+        <li>Eventarc 側：<code>retryPolicy.maxAttempts: 1</code> のみ。<code>deadLetterPolicy</code> というフィールドはそもそも出力に存在しない</li>
+        <li>Pub/Sub 側：<code>deadLetterPolicy.maxDeliveryAttempts: 5</code> と <code>deadLetterTopic</code> に <code>test-dlq</code> が入っている</li>
+        <li>Pub/Sub 側：<code>retryPolicy.minimumBackoff: 10s</code> / <code>maximumBackoff: 600s</code></li>
+      </ul>
+    </div>
+
+    <div class="step-label">これでわかること</div>
+    <div class="insight">失敗の受け皿を持てるのは、自分で書いたサブスクリプションの側だけ。GCS → processor の失敗は 1 回試して捨てられ、どこにも記録が残らない。DLQ が要る区間はマネージドなトリガーに任せきらない、という判断がここに現れている。</div>
+  </div>
+
+  <div class="card check" id="check-2">
+    <span class="tag">確認 2</span>
+    <h3>わざと失敗させて DLQ に落とす</h3>
+    <p>subscriber の書き込み権限を剥がし、5 回のリトライを経てメッセージが DLQ に現れることを見る。 <a class="link-back" href="#learn-2">↑ 学び 2</a></p>
+
+    <div class="step-label">手順</div>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>gcloud storage buckets remove-iam-policy-binding "gs://$OUTPUT_BUCKET" \
+  --member="serviceAccount:test-gcf-subscriber-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role=roles/storage.objectCreator
+gcloud storage cp /tmp/t.json "gs://$INPUT_BUCKET/fail.json"   # 5〜10 分待つ
+gcloud pubsub subscriptions pull test-dlq-monitor --limit=5 --format='value(message.data)'</code></pre>
+    </div>
+
+    <div class="step-label">期待される結果</div>
+    <div class="expect">
+      <ul>
+        <li><code>test-dlq-monitor</code> から <code>fail.json</code> を含む JSON が引ける（<code>--auto-ack</code> を付けなければ残る）</li>
+        <li>1 回目の失敗直後には出てこない。<code>maxDeliveryAttempts: 5</code> とバックオフ 10s→600s の分だけ遅れる</li>
+        <li>いつまで待っても出てこない場合は IAM 不足を疑う（→ <a href="#pitfalls">つまずき 2</a>）</li>
+      </ul>
+    </div>
+
+    <div class="step-label">これでわかること</div>
+    <div class="insight">DLQ は「失敗したら即座に隔離する仕組み」ではなく「規定回数を使い切った先の終点」。<code>max_delivery_attempts</code> とバックオフの組み合わせが、障害検知までの遅れをそのまま決める。終わったら剥がした <code>roles/storage.objectCreator</code> を <code>add-iam-policy-binding</code> で戻すこと（戻さないと以降の確認が全部失敗する）。</div>
+  </div>
+
+  <div class="card check" id="check-3">
+    <span class="tag">確認 3</span>
+    <h3>サービスエージェントに付いた権限を目視する</h3>
+    <p>自分が <code>google_service_account</code> で作っていない SA に、どんな権限が渡っているかを確かめる。 <a class="link-back" href="#learn-3">↑ 学び 3</a></p>
+
+    <div class="step-label">手順</div>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>gcloud projects get-iam-policy "$PROJECT_ID" --flatten='bindings[].members' \
+  --filter='bindings.members~(gcp-sa-pubsub|gs-project-accounts|gcf-admin-robot)' \
+  --format='table(bindings.role, bindings.members)'
+
+gcloud iam service-accounts get-iam-policy \
+  "test-eventarc-invoker-sa@$PROJECT_ID.iam.gserviceaccount.com" --format='yaml(bindings)'</code></pre>
+    </div>
+
+    <div class="step-label">期待される結果</div>
+    <div class="expect">
+      <ul>
+        <li><code>service-$PROJECT_NUMBER@gs-project-accounts.iam.gserviceaccount.com</code> に <code>roles/pubsub.publisher</code></li>
+        <li>SA ポリシー側に <code>roles/iam.serviceAccountTokenCreator</code> が <code>service-$PROJECT_NUMBER@gcp-sa-pubsub...</code> 宛で付いている</li>
+        <li>これらは <code>gcloud iam service-accounts list</code> には出てこない（プロジェクト内の SA ではない）</li>
+      </ul>
+    </div>
+
+    <div class="step-label">これでわかること</div>
+    <div class="insight">GCS イベントの配送も、Push サブスクリプションの OIDC トークン発行も、Google 側のエージェントが自分の代わりに実行している。だから「自作 SA には全部権限を付けたのに動かない」が起きる。権限エラーのメールアドレスに <code>gcp-sa-</code> や <code>gs-project-accounts</code> が見えたらこの類。</div>
+  </div>
+
+  <div class="card check" id="check-4">
+    <span class="tag">確認 4</span>
+    <h3>直叩きは弾かれるのに GCS 経由では動く</h3>
+    <p>外部からの HTTP は届かないのに、Eventarc 経由の同じエンドポイントは動くことを対比する。 <a class="link-back" href="#learn-4">↑ 学び 4</a></p>
+
+    <div class="step-label">手順</div>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>gcloud functions describe test-processor --region="$REGION" --v2 \
+  --format='value(serviceConfig.ingressSettings, serviceConfig.uri)'
+URI=$(gcloud functions describe test-processor --region="$REGION" --v2 --format='value(serviceConfig.uri)')
+curl -s -o /dev/null -w '%{http_code}\n' "$URI"
+gcloud storage cp /tmp/t.json "gs://$INPUT_BUCKET/ok.json" &amp;&amp; sleep 30
+gcloud storage ls "gs://$OUTPUT_BUCKET/processed/"</code></pre>
+    </div>
+
+    <div class="step-label">期待される結果</div>
+    <div class="expect">
+      <ul>
+        <li><code>ingressSettings</code> は <code>ALLOW_INTERNAL_ONLY</code></li>
+        <li><code>curl</code> の HTTP ステータスは 200 にならない（ingress で落とされるため 404、認証で落ちる場合は 403）</li>
+        <li>それでも <code>gs://$OUTPUT_BUCKET/processed/ok.json.json</code> が生成されている</li>
+      </ul>
+    </div>
+
+    <div class="step-label">これでわかること</div>
+    <div class="insight">ingress は「どこから来た通信か」、<code>roles/run.invoker</code> は「誰として来たか」で、別々に効く。Eventarc / Pub/Sub Push は同一プロジェクト + <code>run.app</code> URL であれば内部扱いになるので、公開エンドポイントを一切持たないままイベント駆動を成立させられる。</div>
+  </div>
+</section>
+
+<!-- ============ 6. 後始末とつまずき ============ -->
+<section id="pitfalls">
+  <h2>後始末とつまずき</h2>
+
+  <div class="card pitfall">
+    <h3>後始末：課金を止める</h3>
+    <p><code>min_instance_count = 0</code> なので待機インスタンスの課金は無い。残るのは GCS 3 バケット、Gen2 関数のビルド成果物（Artifact Registry のイメージ）、そして <code>retain_acked_messages = true</code> と無期限 TTL のせいで自然消滅しない DLQ 監視サブスクリプション。</p>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>terraform -chdir=architectures/05/main destroy
+gcloud functions list --regions=asia-northeast1
+gcloud pubsub topics list --format='value(name)'
+gcloud artifacts repositories list --location=asia-northeast1</code></pre>
+    </div>
+  </div>
+
+  <div class="card pitfall">
+    <h3>つまずき 1：<code>project_id</code> がプレースホルダのまま（2 箇所）</h3>
+    <p><a href="main/local.tf#L5">main/local.tf:5</a> の <code>project_id = "your-project-id"</code> と <a href="main/provider.tf#L16">main/provider.tf:16</a> の <code>project</code> は別々に書かれていて、両方を直さないと apply が通らない。<code>outputs.tf</code> も無いので、apply 後の値は上の「共通の準備」のように <code>gcloud</code> から引くことになる。</p>
+  </div>
+
+  <div class="card pitfall">
+    <h3>つまずき 2：DLQ の IAM が 1 つ足りない可能性</h3>
+    <p>公式ドキュメントによると DLQ 転送には <strong>DLQ トピックへの <code>publisher</code></strong> と <strong>元サブスクリプションへの <code>subscriber</code></strong> の両方が Pub/Sub サービスエージェントに要る。<a href="modules/iam/main.tf">modules/iam/main.tf</a> にあるのは前者だけで、後者が無いと転送後にサブスクリプションからメッセージを削除できず、確認 2 で DLQ にいつまでも現れないことがある。未検証なので、実際に踏んだら次で補う。</p>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>gcloud pubsub subscriptions add-iam-policy-binding test-subscriber \
+  --member="serviceAccount:service-$PROJECT_NUMBER@gcp-sa-pubsub.iam.gserviceaccount.com" \
+  --role=roles/pubsub.subscriber</code></pre>
+    </div>
+  </div>
+
+  <div class="card pitfall">
+    <h3>つまずき 3：コード中の説明文と実際の配線が食い違っている</h3>
+    <p><a href="modules/functions/main.tf">modules/functions/main.tf</a> の subscriber の <code>description</code> と <a href="modules/functions/source/subscriber/index.js">source/subscriber/index.js</a> のコメントは「Eventarc (Pub/Sub topic.messagePublished) で起動」と書いてあるが、実際には Eventarc トリガーは作っておらず Push サブスクリプション経由。<code>gcloud eventarc triggers list</code> にトリガーが 1 つしか出ないのは正常で、探し回る前にこの食い違いを思い出すこと。</p>
+  </div>
+</section>
+
+<!-- ============ 7. 理解度チェック ============ -->
+<section id="selfcheck">
+  <h2>理解度チェック</h2>
+  <p class="section-note">設定を思い出せるかではなく、理由を自分の言葉で説明できるかを問う。チェック状態はこのブラウザに保存される。</p>
+  <div class="card">
+    <ul class="selfcheck">
+      <li><input type="checkbox" data-key="sc-1"><span>後段だけ Eventarc トリガーを使わなかった理由を、Eventarc 側で書けない設定を挙げて説明できる</span></li>
+      <li><input type="checkbox" data-key="sc-2"><span>あるメッセージが DLQ に到達するまでに何回・どれくらいの時間がかかるかを、コード中の値から見積もれる</span></li>
+      <li><input type="checkbox" data-key="sc-3"><span>自作 SA ではないどの SA にどんな権限が必要で、それぞれ何のために使われるかを 3 つ挙げられる</span></li>
+      <li><input type="checkbox" data-key="sc-4"><span><code>ALLOW_INTERNAL_ONLY</code> なのに Eventarc からは呼べる理由を、ingress と IAM を区別して説明できる</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 8. 参考 ============ -->
+<section id="refs">
+  <h2>参考リンクと関連テーマ</h2>
+  <div class="card">
+    <ul class="links">
+      <li><a href="https://cloud.google.com/run/docs/securing/ingress">Cloud Run: Restricting ingress</a><br><span class="desc">学び 4 の裏取り。internal 扱いになるプロダクト一覧と「run.app URL であること」の条件</span></li>
+      <li><a href="https://cloud.google.com/pubsub/docs/handling-failures">Pub/Sub: Handle message failures</a><br><span class="desc">学び 2 / つまずき 2 の裏取り。DLQ 転送に必要な 2 つのロール</span></li>
+      <li><a href="https://cloud.google.com/pubsub/docs/authenticate-push-subscriptions">Pub/Sub: Authenticate push subscriptions</a><br><span class="desc">学び 3 の裏取り。OIDC トークン発行に <code>serviceAccountTokenCreator</code> が要る理由</span></li>
+      <li><a href="https://cloud.google.com/eventarc/docs/roles-permissions">Eventarc: Roles and permissions</a><br><span class="desc">GCS サービスエージェントへの <code>pubsub.publisher</code> の根拠</span></li>
+      <li><a href="../04/README.md">architectures/04 — GKE Autopilot + Workload Identity</a><br><span class="desc">「別の ID になりすまして権限を借りる」という同じ考え方が、Pod 側から見た形で出てくる</span></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  google-cloud-learning / <code>architectures/05</code> — 生成日 2026-08-12<br>
+  Terraform コード・関数ソース・Google Cloud 公式ドキュメント（Cloud Run ingress / Pub/Sub DLQ / push 認証）をもとに生成。このテーマには ROADMAP・README・コミット履歴が無いため、学習の軸はコードから読み取っている。
+  未検証：つまずき 2（DLQ 用 <code>pubsub.subscriber</code> の不足）と、確認 4 の <code>curl</code> が返す具体的なステータスコード。設計の要点 1 の「対比のための <code>max_attempts = 1</code>」は仮説。
+</footer>
+
+</div>
+<script>
+  // コマンドのコピー（実際にターミナルへ貼って確認する用途のため）
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.parentElement.querySelector('code');
+      navigator.clipboard.writeText(code.innerText).then(function () {
+        var prev = btn.textContent;
+        btn.textContent = 'copied';
+        setTimeout(function () { btn.textContent = prev; }, 1200);
+      });
+    });
+  });
+
+  // 理解度チェックの状態を保存（後日開き直したときに続きから確認できるように）
+  var storeKey = 'arch-summary:' + location.pathname;
+  var saved = JSON.parse(localStorage.getItem(storeKey) || '{}');
+  document.querySelectorAll('.selfcheck input[data-key]').forEach(function (box) {
+    box.checked = !!saved[box.dataset.key];
+    box.addEventListener('change', function () {
+      saved[box.dataset.key] = box.checked;
+      localStorage.setItem(storeKey, JSON.stringify(saved));
+    });
+  });
+</script>
+</body>
+</html>
