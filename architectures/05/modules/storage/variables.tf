@@ -1,11 +1,10 @@
 variable "prefix" {
   description = "Prefix for naming resources"
   type        = string
-
-  default = "test"
 }
 
-variable "project_id" {
-  description = "The ID of the project"
+variable "region" {
+  description = "Region for Cloud Storage buckets"
   type        = string
 }
+
