@@ -1,0 +1,4 @@
+interface:
+  display_name: "アーキテクチャケーススタディ"
+  short_description: "既存READMEを根拠に実務向けケーススタディを執筆"
+  default_prompt: "Use $architecture-case-study to draft a case study from architectures/03."
