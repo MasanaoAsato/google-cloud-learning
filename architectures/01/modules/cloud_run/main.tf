@@ -12,7 +12,7 @@ data "google_iam_policy" "noauth" {
 resource "google_cloud_run_v2_service" "default" {
   name                = "${var.prefix}-cloud-run-service"
   location            = var.location
-  ingress             = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+  ingress             = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
   deletion_protection = false
 
   template {

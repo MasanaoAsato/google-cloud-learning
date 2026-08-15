@@ -1,0 +1,26 @@
+{
+  "skill_name": "arch-summary",
+  "evals": [
+    {
+      "id": 0,
+      "name": "theme-10-no-docs",
+      "prompt": "architectures/10 のまとめを HTML で作って",
+      "expected_output": "architectures/10/summary.html が生成される。ドキュメントが無いテーマなので、Terraform コードだけから学びの軸（オブジェクトごとの Cache-Control の作り分け、/api/* のパス分岐、backend_bucket と backend_service の使い分け）を読み取り、各学びに curl 等の確認手順が対応している。",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "theme-09-with-roadmap",
+      "prompt": "09 で結局何を学んだのか、どう確認できるのかを整理しておきたい",
+      "expected_output": "architectures/09/summary.html が生成される。既存の ROADMAP.md の学習軸を骨格として採用し、ストリーミングの課金と destroy の後始末が明記されている。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "theme-03-indirect-phrasing",
+      "prompt": "architectures/03 の振り返り資料ってある？作ってほしい",
+      "expected_output": "architectures/03/summary.html が生成される。モジュール数が多いテーマでも学びポイントが 3〜6 個に絞られ、網羅列挙になっていない。",
+      "files": []
+    }
+  ]
+}

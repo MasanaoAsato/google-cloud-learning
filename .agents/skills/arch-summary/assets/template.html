@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<!--
+  学習テーマまとめテンプレート。
+  {{ }} のプレースホルダを埋め、<!-- repeat -->で示したブロックを必要な数だけ複製する。
+  使わないセクションは <section> ごと削除してよい（ナビのリンクも合わせて消す）。
+  CSS / JS は完成済み。構造とクラス名は変えずに中身だけ差し替えること。
+
+  分量の予算: 全体で A4 2〜3 ページ / 25KB 前後。
+  学び 3〜5 個（各 2〜3 文）、確認は学びと同数、設計の要点 3 項目まで（省略可）、
+  つまずきは実話が 0〜3 個（無ければ後始末だけ）。
+  超えたら足すのではなく削る。詳細は references/content-guide.md。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{テーマ番号}} — {{主題タイトル}} | {{リポジトリ名}}</title>
+<style>
+  :root {
+    --bg: #fbfbfa;
+    --surface: #ffffff;
+    --surface-2: #f4f5f7;
+    --border: #e3e5e8;
+    --text: #1d2025;
+    --text-dim: #5b6270;
+    --accent: #2f6fd0;
+    --accent-soft: #e8f0fc;
+    --warn: #b4560c;
+    --warn-soft: #fdf1e4;
+    --ok: #1f7a4d;
+    --code-bg: #1e2229;
+    --code-text: #e6e9ef;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c;
+      --surface: #1b1f26;
+      --surface-2: #23282f;
+      --border: #333a44;
+      --text: #e7eaee;
+      --text-dim: #a2abb8;
+      --accent: #7bafff;
+      --accent-soft: #1d2b40;
+      --warn: #e3a25f;
+      --warn-soft: #33261a;
+      --ok: #63c491;
+      --code-bg: #0f1216;
+      --code-text: #e6e9ef;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+    font-size: 15px;
+    line-height: 1.85;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* ---------- ヘッダー ---------- */
+  .hero { padding: 48px 0 24px; border-bottom: 1px solid var(--border); }
+  .hero .num {
+    display: inline-block; font-size: 12px; letter-spacing: .12em; font-weight: 700;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 4px 12px; border-radius: 999px;
+  }
+  .hero h1 { font-size: 27px; line-height: 1.45; margin: 14px 0 10px; letter-spacing: -.01em; }
+  .hero .lead { color: var(--text-dim); margin: 0; font-size: 15.5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .chip {
+    font-size: 12.5px; padding: 4px 11px; border-radius: 6px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim);
+  }
+  .chip.cost { color: var(--warn); background: var(--warn-soft); border-color: transparent; font-weight: 600; }
+
+  /* ---------- ナビ ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  nav ul { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0; padding: 10px 0; }
+  nav a {
+    font-size: 13px; color: var(--text-dim); text-decoration: none;
+    padding: 5px 10px; border-radius: 6px;
+  }
+  nav a:hover { color: var(--accent); background: var(--accent-soft); }
+
+  /* ---------- セクション共通 ---------- */
+  section { margin-bottom: 52px; scroll-margin-top: 64px; }
+  h2 {
+    font-size: 19px; margin: 0 0 6px; padding-bottom: 10px;
+    border-bottom: 2px solid var(--border); letter-spacing: -.01em;
+  }
+  .section-note { color: var(--text-dim); font-size: 13.5px; margin: 8px 0 24px; }
+  h3 { font-size: 16px; margin: 0 0 8px; line-height: 1.6; }
+  p { margin: 0 0 12px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 22px; margin-bottom: 16px;
+  }
+
+  /* ---------- 学びポイント ---------- */
+  .learn { display: flex; gap: 16px; }
+  .learn .idx {
+    flex: 0 0 30px; height: 30px; border-radius: 8px;
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .learn .body { flex: 1; min-width: 0; }
+  .learn p:last-child { margin-bottom: 0; }
+  .link-check {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--accent); text-decoration: none;
+    border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+    border-radius: 6px; padding: 3px 10px; margin-top: 10px;
+  }
+  .link-check:hover { background: var(--accent-soft); border-style: solid; }
+
+  /* ---------- 構成 ---------- */
+  .diagram { margin: 4px 0 20px; }
+  .diagram a {
+    display: block; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; text-align: center; text-decoration: none;
+  }
+  .diagram img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  .diagram .cap { display: block; font-size: 12.5px; color: var(--text-dim); margin-top: 10px; }
+
+  .flow { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 24px; }
+  .flow-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .node {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 13px; font-size: 13.5px; font-weight: 600; white-space: nowrap;
+  }
+  .node.dim { font-weight: 500; color: var(--text-dim); }
+  .arrow { color: var(--text-dim); font-size: 13px; white-space: nowrap; }
+  .arrow b { color: var(--text); font-weight: 600; }
+  .flow-row.indent { padding-left: 28px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 0 0 8px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .04em; color: var(--text-dim); font-weight: 600; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  td code, p code, li code { font-size: 12.5px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px;
+  }
+
+  /* ---------- コードブロック ---------- */
+  .code { position: relative; margin: 10px 0 14px; }
+  .code pre {
+    margin: 0; background: var(--code-bg); color: var(--code-text);
+    border-radius: 8px; padding: 15px 17px; overflow-x: auto;
+    font-size: 12.5px; line-height: 1.7;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .code pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+  .copy {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255,255,255,.08); color: #cfd6e0;
+    border: 1px solid rgba(255,255,255,.16); border-radius: 5px;
+    font-size: 11px; padding: 3px 9px; cursor: pointer; opacity: 0; transition: opacity .15s;
+  }
+  .code:hover .copy, .copy:focus { opacity: 1; }
+  .copy:hover { background: rgba(255,255,255,.16); }
+
+  /* ---------- 検証シナリオ ---------- */
+  .check { border-left: 3px solid var(--accent); }
+  .check .tag {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--accent);
+    text-transform: uppercase;
+  }
+  .step-label {
+    font-size: 12px; font-weight: 700; color: var(--text-dim);
+    letter-spacing: .04em; margin: 16px 0 4px;
+  }
+  .expect {
+    background: var(--surface-2); border-radius: 8px; padding: 12px 15px;
+    font-size: 13.5px; margin: 4px 0 0;
+  }
+  .expect ul { margin: 0; padding-left: 20px; }
+  .expect li { margin-bottom: 4px; }
+  .insight {
+    border-left: 3px solid var(--ok); background: color-mix(in srgb, var(--ok) 8%, transparent);
+    border-radius: 0 8px 8px 0; padding: 12px 15px; font-size: 14px; margin-top: 6px;
+  }
+  .link-back { font-size: 12.5px; color: var(--text-dim); text-decoration: none; }
+  .link-back:hover { color: var(--accent); }
+
+  /* ---------- 注意 ---------- */
+  .pitfall { border-left: 3px solid var(--warn); }
+  .pitfall h3 { color: var(--warn); font-size: 15px; }
+
+  /* ---------- 理解度チェック ---------- */
+  .selfcheck { list-style: none; margin: 0; padding: 0; }
+  .selfcheck li {
+    display: flex; gap: 11px; align-items: flex-start;
+    padding: 11px 0; border-bottom: 1px dashed var(--border); font-size: 14.5px;
+  }
+  .selfcheck li:last-child { border-bottom: none; }
+  .selfcheck input { margin-top: 6px; flex: 0 0 auto; accent-color: var(--accent); }
+  .selfcheck input:checked + span { color: var(--text-dim); text-decoration: line-through; }
+
+  /* ---------- リンク ---------- */
+  .links { list-style: none; margin: 0; padding: 0; }
+  .links li { padding: 7px 0; font-size: 14px; }
+  .links a { color: var(--accent); }
+  .links .desc { color: var(--text-dim); font-size: 13px; }
+
+  footer {
+    margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 12.5px;
+  }
+
+  /* ---------- 印刷 ---------- */
+  @media print {
+    :root {
+      --bg: #fff; --surface: #fff; --surface-2: #f6f6f6; --border: #ccc;
+      --text: #000; --text-dim: #444; --accent: #14459c; --accent-soft: #eef3fb;
+      --code-bg: #f4f4f4; --code-text: #000;
+    }
+    body { font-size: 10.5pt; line-height: 1.65; }
+    nav, .copy { display: none; }
+    .wrap { max-width: none; padding: 0; }
+    .hero { padding-top: 0; }
+    .card, .code, .flow, .diagram, table { break-inside: avoid; page-break-inside: avoid; }
+    .diagram img { max-height: 320px; }
+    section { break-inside: auto; margin-bottom: 26px; }
+    h2 { break-after: avoid; }
+    .code pre { border: 1px solid #ddd; white-space: pre-wrap; word-break: break-all; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="num">ARCHITECTURE {{テーマ番号}}</span>
+  <h1>{{主題タイトル：このテーマの問いを名乗らせる}}</h1>
+  <p class="lead">{{一行サマリ：何を作り、何を確かめるテーマか}}</p>
+  <div class="chips">
+    <!-- repeat: 主要プロダクト・リージョンなど。課金が続くテーマは cost チップを必ず入れる -->
+    <span class="chip">{{主要プロダクト}}</span>
+    <span class="chip">{{リージョン}}</span>
+    <span class="chip cost">{{課金注意：例「LB は存在するだけで課金。検証後は destroy」}}</span>
+  </div>
+</header>
+
+<nav>
+  <ul>
+    <li><a href="#learn">学ぶこと</a></li>
+    <li><a href="#stack">構成</a></li>
+    <li><a href="#design">設計の要点</a></li>
+    <li><a href="#checks">確認のしかた</a></li>
+    <li><a href="#pitfalls">後始末・つまずき</a></li>
+    <li><a href="#selfcheck">理解度チェック</a></li>
+    <li><a href="#refs">参考</a></li>
+  </ul>
+</nav>
+
+<!-- ============ 2. このテーマで学ぶこと ============ -->
+<section id="learn">
+  <h2>このテーマで学ぶこと</h2>
+  <p class="section-note">各項目には、それを自分の目で確かめる手順が紐づいている。</p>
+
+  <!-- repeat: 3〜6 個。id は learn-1, learn-2... 対応する検証シナリオへリンクする -->
+  <div class="card learn" id="learn-1">
+    <div class="idx">1</div>
+    <div class="body">
+      <h3>{{理解した状態を一文で。「〜について」ではなく「〜がどう決まるか」}}</h3>
+      <p>{{なぜ重要か。実務や他テーマとどう繋がるか。仕様の言い換えではなく理由を書く}}</p>
+      <a class="link-check" href="#check-1">→ 確認 1：{{確認シナリオの見出し}}</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. 何を作ったか ============ -->
+<section id="stack">
+  <h2>何を作ったか</h2>
+  <p class="section-note">{{構成の一行説明}}</p>
+
+  <!--
+    構成図: <テーマパス>/architecture.svg があるならこれを使う（自前で描かない）。
+    summary.html はその隣に置かれるので相対パスで参照できる。
+  -->
+  <div class="diagram">
+    <a href="architecture.svg" target="_blank" rel="noopener">
+      <img src="architecture.svg" alt="{{テーマ}} の構成図">
+      <span class="cap">architecture.svg（クリックで拡大）</span>
+    </a>
+  </div>
+
+  <!--
+    構成図が無いテーマだけ、上の .diagram を消してこの簡易フローを使う（3 行以内）。
+    <div class="flow">
+      <div class="flow-row">
+        <span class="node">{{Client}}</span><span class="arrow">→</span><span class="node">{{Global LB}}</span>
+      </div>
+      <div class="flow-row indent">
+        <span class="arrow"><b>{{分岐条件}}</b> →</span><span class="node">{{動的バックエンド}}</span>
+      </div>
+      <div class="flow-row indent">
+        <span class="arrow"><b>{{その他}}</b> →</span><span class="node">{{Backend Bucket + CDN}}</span>
+      </div>
+    </div>
+  -->
+
+  <!-- 役割は 1 行。最後の列には local.tf / モジュールの実際の値を書く -->
+  <table>
+    <thead>
+      <tr><th>モジュール</th><th>役割</th><th>効いている設定</th></tr>
+    </thead>
+    <tbody>
+      <!-- repeat: モジュールごと -->
+      <tr>
+        <td><code>{{modules/xxx}}</code></td>
+        <td>{{役割（1行）}}</td>
+        <td><code>{{key = value}}</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 4. 設計の要点 ============ -->
+<section id="design">
+  <h2>設計の要点</h2>
+  <p class="section-note">「そう書いてある」ではなく「そう書いた理由」。裏取りできていないものは仮説と明記する。</p>
+
+  <!-- repeat: 3 項目まで、各 1〜2 文。書くことが無ければこの <section> ごと削除する -->
+  <div class="card">
+    <h3>{{選択の見出し：例「cache_mode に USE_ORIGIN_HEADERS を選んだ理由」}}</h3>
+    <p>{{他にどんな選択肢があり、なぜこれを選んだか。1〜2 文。学習用の割り切りはまとめて 1 項目でよい}}</p>
+  </div>
+</section>
+
+<!-- ============ 5. どう確認するか ============ -->
+<section id="checks">
+  <h2>どう確認するか</h2>
+  <p class="section-note">実行時にしか決まらない値は先に変数へ取り込む。設定の違いが結果の違いとして現れる手順を選ぶ。</p>
+
+  <!-- 共通の前提（IP やバケット名の取得）があればここに一度だけ置く -->
+  <div class="card">
+    <h3>共通の準備</h3>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>{{terraform -chdir=... output -raw ... など、以降のコマンドで使う変数の取得}}</code></pre>
+    </div>
+  </div>
+
+  <!-- repeat: 学びポイントと同数。id は check-1, check-2... -->
+  <div class="card check" id="check-1">
+    <span class="tag">確認 1</span>
+    <h3>{{確認シナリオの見出し}}</h3>
+    <p>{{確かめること（一文）}} <a class="link-back" href="#learn-1">↑ 学び 1</a></p>
+
+    <div class="step-label">手順</div>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>{{コピペで動くコマンド。出力は grep / --format で見る行に絞る}}</code></pre>
+    </div>
+
+    <div class="step-label">期待される結果</div>
+    <div class="expect">
+      <ul>
+        <li>{{何がどう見えれば成功か。ヘッダ名・値・件数など具体的に}}</li>
+      </ul>
+    </div>
+
+    <div class="step-label">これでわかること</div>
+    <div class="insight">{{観測結果と理解の接続。ここが無いと単なるコマンド集になる}}</div>
+  </div>
+</section>
+
+<!-- ============ 6. 後始末とつまずき ============ -->
+<section id="pitfalls">
+  <h2>後始末とつまずき</h2>
+
+  <!-- 後始末は必須 -->
+  <div class="card pitfall">
+    <h3>後始末：課金を止める</h3>
+    <p>{{何が課金対象として残るか（1 文）}}</p>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>{{terraform destroy と、残っていないことを確認するコマンド}}</code></pre>
+    </div>
+  </div>
+
+  <!--
+    つまずきは実話があるときだけ 0〜3 個。
+    git 履歴の修正コミット・ROADMAP に書かれた失敗・コードを読んで確実に踏むと分かるものに限る。
+    「名前が衝突することがあります」のような一般論で埋めない。無ければこのブロックごと削除する。
+  -->
+  <div class="card pitfall">
+    <h3>{{実際に踏んだ罠の見出し}}</h3>
+    <p>{{何が起きるか / どう対処するか（1〜2 文）}}</p>
+  </div>
+</section>
+
+<!-- ============ 7. 理解度チェック ============ -->
+<section id="selfcheck">
+  <h2>理解度チェック</h2>
+  <p class="section-note">設定を思い出せるかではなく、理由を自分の言葉で説明できるかを問う。チェック状態はこのブラウザに保存される。</p>
+  <div class="card">
+    <ul class="selfcheck">
+      <!-- repeat: 4〜5 個。学びポイントと 1 対 1 で対応させる。data-key はページ内で一意にする -->
+      <li><input type="checkbox" data-key="sc-1"><span>{{〜を説明できる}}</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 8. 参考 ============ -->
+<section id="refs">
+  <h2>参考リンクと関連テーマ</h2>
+  <div class="card">
+    <ul class="links">
+      <!-- repeat: 実在確認した URL のみ -->
+      <li><a href="{{URL}}">{{公式ドキュメントのタイトル}}</a><br><span class="desc">{{どの論点の裏取りに使ったか}}</span></li>
+      <li><a href="{{相対パス}}">{{関連テーマ}}</a><br><span class="desc">{{このテーマとの関係}}</span></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  {{リポジトリ名}} / {{テーマディレクトリのパス}} — 生成日 {{YYYY-MM-DD}}<br>
+  このまとめは Terraform コード・{{参照したドキュメント}}・git 履歴をもとに生成。
+  {{未検証・仮説の箇所があればここに明示}}
+</footer>
+
+</div>
+<script>
+  // コマンドのコピー（実際にターミナルへ貼って確認する用途のため）
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.parentElement.querySelector('code');
+      navigator.clipboard.writeText(code.innerText).then(function () {
+        var prev = btn.textContent;
+        btn.textContent = 'copied';
+        setTimeout(function () { btn.textContent = prev; }, 1200);
+      });
+    });
+  });
+
+  // 理解度チェックの状態を保存（後日開き直したときに続きから確認できるように）
+  var storeKey = 'arch-summary:' + location.pathname;
+  var saved = JSON.parse(localStorage.getItem(storeKey) || '{}');
+  document.querySelectorAll('.selfcheck input[data-key]').forEach(function (box) {
+    box.checked = !!saved[box.dataset.key];
+    box.addEventListener('change', function () {
+      saved[box.dataset.key] = box.checked;
+      localStorage.setItem(storeKey, JSON.stringify(saved));
+    });
+  });
+</script>
+</body>
+</html>
