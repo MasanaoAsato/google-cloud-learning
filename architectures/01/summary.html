@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 — Cloud Run を LB 経由で公開する | google-cloud-learning</title>
+<style>
+  :root {
+    --bg: #fbfbfa;
+    --surface: #ffffff;
+    --surface-2: #f4f5f7;
+    --border: #e3e5e8;
+    --text: #1d2025;
+    --text-dim: #5b6270;
+    --accent: #2f6fd0;
+    --accent-soft: #e8f0fc;
+    --warn: #b4560c;
+    --warn-soft: #fdf1e4;
+    --ok: #1f7a4d;
+    --code-bg: #1e2229;
+    --code-text: #e6e9ef;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c;
+      --surface: #1b1f26;
+      --surface-2: #23282f;
+      --border: #333a44;
+      --text: #e7eaee;
+      --text-dim: #a2abb8;
+      --accent: #7bafff;
+      --accent-soft: #1d2b40;
+      --warn: #e3a25f;
+      --warn-soft: #33261a;
+      --ok: #63c491;
+      --code-bg: #0f1216;
+      --code-text: #e6e9ef;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+    font-size: 15px;
+    line-height: 1.85;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px 96px; }
+  .hero { padding: 48px 0 24px; border-bottom: 1px solid var(--border); }
+  .hero .num {
+    display: inline-block; font-size: 12px; letter-spacing: .12em; font-weight: 700;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 4px 12px; border-radius: 999px;
+  }
+  .hero h1 { font-size: 27px; line-height: 1.45; margin: 14px 0 10px; letter-spacing: -.01em; }
+  .hero .lead { color: var(--text-dim); margin: 0; font-size: 15.5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .chip {
+    font-size: 12.5px; padding: 4px 11px; border-radius: 6px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim);
+  }
+  .chip.cost { color: var(--warn); background: var(--warn-soft); border-color: transparent; font-weight: 600; }
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  nav ul { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0; padding: 10px 0; }
+  nav a {
+    font-size: 13px; color: var(--text-dim); text-decoration: none;
+    padding: 5px 10px; border-radius: 6px;
+  }
+  nav a:hover { color: var(--accent); background: var(--accent-soft); }
+  section { margin-bottom: 52px; scroll-margin-top: 64px; }
+  h2 {
+    font-size: 19px; margin: 0 0 6px; padding-bottom: 10px;
+    border-bottom: 2px solid var(--border); letter-spacing: -.01em;
+  }
+  .section-note { color: var(--text-dim); font-size: 13.5px; margin: 8px 0 24px; }
+  h3 { font-size: 16px; margin: 0 0 8px; line-height: 1.6; }
+  p { margin: 0 0 12px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 22px; margin-bottom: 16px;
+  }
+  .learn { display: flex; gap: 16px; }
+  .learn .idx {
+    flex: 0 0 30px; height: 30px; border-radius: 8px;
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .learn .body { flex: 1; min-width: 0; }
+  .learn p:last-child { margin-bottom: 0; }
+  .link-check {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--accent); text-decoration: none;
+    border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+    border-radius: 6px; padding: 3px 10px; margin-top: 10px;
+  }
+  .link-check:hover { background: var(--accent-soft); border-style: solid; }
+  .diagram { margin: 4px 0 20px; }
+  .diagram a {
+    display: block; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; text-align: center; text-decoration: none;
+  }
+  .diagram img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  .diagram .cap { display: block; font-size: 12.5px; color: var(--text-dim); margin-top: 10px; }
+  .flow { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 24px; }
+  .flow-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .node {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 13px; font-size: 13.5px; font-weight: 600; white-space: nowrap;
+  }
+  .node.dim { font-weight: 500; color: var(--text-dim); }
+  .arrow { color: var(--text-dim); font-size: 13px; white-space: nowrap; }
+  .arrow b { color: var(--text); font-weight: 600; }
+  .flow-row.indent { padding-left: 28px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 0 0 8px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .04em; color: var(--text-dim); font-weight: 600; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  td code, p code, li code { font-size: 12.5px; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px;
+  }
+  .code { position: relative; margin: 10px 0 14px; }
+  .code pre {
+    margin: 0; background: var(--code-bg); color: var(--code-text);
+    border-radius: 8px; padding: 15px 17px; overflow-x: auto;
+    font-size: 12.5px; line-height: 1.7;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .code pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+  .copy {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255,255,255,.08); color: #cfd6e0;
+    border: 1px solid rgba(255,255,255,.16); border-radius: 5px;
+    font-size: 11px; padding: 3px 9px; cursor: pointer; opacity: 0; transition: opacity .15s;
+  }
+  .code:hover .copy, .copy:focus { opacity: 1; }
+  .copy:hover { background: rgba(255,255,255,.16); }
+  .check { border-left: 3px solid var(--accent); }
+  .check .tag {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--accent);
+    text-transform: uppercase;
+  }
+  .step-label {
+    font-size: 12px; font-weight: 700; color: var(--text-dim);
+    letter-spacing: .04em; margin: 16px 0 4px;
+  }
+  .expect {
+    background: var(--surface-2); border-radius: 8px; padding: 12px 15px;
+    font-size: 13.5px; margin: 4px 0 0;
+  }
+  .expect ul { margin: 0; padding-left: 20px; }
+  .expect li { margin-bottom: 4px; }
+  .insight {
+    border-left: 3px solid var(--ok); background: color-mix(in srgb, var(--ok) 8%, transparent);
+    border-radius: 0 8px 8px 0; padding: 12px 15px; font-size: 14px; margin-top: 6px;
+  }
+  .link-back { font-size: 12.5px; color: var(--text-dim); text-decoration: none; }
+  .link-back:hover { color: var(--accent); }
+  .pitfall { border-left: 3px solid var(--warn); }
+  .pitfall h3 { color: var(--warn); font-size: 15px; }
+  .selfcheck { list-style: none; margin: 0; padding: 0; }
+  .selfcheck li {
+    display: flex; gap: 11px; align-items: flex-start;
+    padding: 11px 0; border-bottom: 1px dashed var(--border); font-size: 14.5px;
+  }
+  .selfcheck li:last-child { border-bottom: none; }
+  .selfcheck input { margin-top: 6px; flex: 0 0 auto; accent-color: var(--accent); }
+  .selfcheck input:checked + span { color: var(--text-dim); text-decoration: line-through; }
+  .links { list-style: none; margin: 0; padding: 0; }
+  .links li { padding: 7px 0; font-size: 14px; }
+  .links a { color: var(--accent); }
+  .links .desc { color: var(--text-dim); font-size: 13px; }
+  footer {
+    margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 12.5px;
+  }
+  @media print {
+    :root {
+      --bg: #fff; --surface: #fff; --surface-2: #f6f6f6; --border: #ccc;
+      --text: #000; --text-dim: #444; --accent: #14459c; --accent-soft: #eef3fb;
+      --code-bg: #f4f4f4; --code-text: #000;
+    }
+    body { font-size: 10.5pt; line-height: 1.65; }
+    nav, .copy { display: none; }
+    .wrap { max-width: none; padding: 0; }
+    .hero { padding-top: 0; }
+    .card, .code, .diagram, table { break-inside: avoid; page-break-inside: avoid; }
+    .diagram img { max-height: 320px; }
+    section { break-inside: auto; margin-bottom: 26px; }
+    h2 { break-after: avoid; }
+    .code pre { border: 1px solid #ddd; white-space: pre-wrap; word-break: break-all; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="num">ARCHITECTURE 01</span>
+  <h1>Cloud Run を LB 経由で公開し、入口を一つに絞る</h1>
+  <p class="lead">独自ドメイン、HTTPS、Cloud Armor を External Application Load Balancer に集め、Cloud Run の既定 URL を迂回できないことを確認する。</p>
+  <div class="chips">
+    <span class="chip">Cloud Run</span>
+    <span class="chip">Global External Application Load Balancer</span>
+    <span class="chip">asia-northeast1</span>
+    <span class="chip cost">3 時間の検証後に destroy</span>
+  </div>
+</header>
+
+<nav>
+  <ul>
+    <li><a href="#learn">学ぶこと</a></li>
+    <li><a href="#stack">構成</a></li>
+    <li><a href="#design">設計の要点</a></li>
+    <li><a href="#checks">確認のしかた</a></li>
+    <li><a href="#pitfalls">後始末・つまずき</a></li>
+    <li><a href="#selfcheck">理解度チェック</a></li>
+    <li><a href="#refs">参考</a></li>
+  </ul>
+</nav>
+
+<section id="learn">
+  <h2>このテーマで学ぶこと</h2>
+  <p class="section-note">各項目には、それを自分の目で確かめる手順が紐づいている。</p>
+
+  <div class="card learn" id="learn-1">
+    <div class="idx">1</div>
+    <div class="body">
+      <h3>独自ドメインの HTTPS は、Cloud Run ではなくロードバランサーで受ける</h3>
+      <p>グローバル IP、DNS の A レコード、Certificate Manager の DNS 認証、証明書マップを組み合わせると、ブラウザの入口を一つにできる。Serverless NEG は、その入口から Cloud Run をバックエンドとして扱うための接続点になる。</p>
+      <a class="link-check" href="#check-1">→ 確認 1：証明書・HTTPS・リダイレクトを確認する</a>
+    </div>
+  </div>
+
+  <div class="card learn" id="learn-2">
+    <div class="idx">2</div>
+    <div class="body">
+      <h3>Cloud Run の IAM と Ingress は、公開可否と到達経路を別々に決める</h3>
+      <p>ブラウザからアクセスさせるため、この構成では <code>allUsers</code> に Invoker を付与する。それでも <code>INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER</code> を指定すれば、インターネットから <code>run.app</code> の既定 URL を直接通る経路は使えない。</p>
+      <a class="link-check" href="#check-2">→ 確認 2：LB 経由と既定 URL を比較する</a>
+    </div>
+  </div>
+
+  <div class="card learn" id="learn-3">
+    <div class="idx">3</div>
+    <div class="body">
+      <h3>Cloud Armor の国コード条件は、Cloud Run の前で通過を分ける</h3>
+      <p>優先度 100 の <code>origin.region_code == 'JP'</code> を通し、それ以外を既定の 403 で拒否する。これはアクセス元を絞る入口制御であって、利用者本人を識別する認証ではない。</p>
+      <a class="link-check" href="#check-3">→ 確認 3：国内外で応答を比べる</a>
+    </div>
+  </div>
+</section>
+
+<section id="stack">
+  <h2>何を作ったか</h2>
+  <p class="section-note">Cloud DNS → External Application Load Balancer → Cloud Armor → Serverless NEG → Cloud Run の公開経路。</p>
+
+  <div class="diagram">
+    <a href="architecture.svg" target="_blank" rel="noopener">
+      <img src="architecture.svg" alt="Architecture 01 の構成図">
+      <span class="cap">architecture.svg（クリックで拡大）</span>
+    </a>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>モジュール</th><th>役割</th><th>効いている設定</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>cloud_run</code></td>
+        <td>ブラウザ向けアプリケーションのバックエンド</td>
+        <td><code>INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER</code>、0〜3 インスタンス</td>
+      </tr>
+      <tr>
+        <td><code>load_balancer</code></td>
+        <td>独自ドメインの HTTP(S) 公開入口</td>
+        <td><code>EXTERNAL_MANAGED</code>、Serverless NEG、TLS 1.2 以上</td>
+      </tr>
+      <tr>
+        <td><code>cloud_armor</code></td>
+        <td>LB のバックエンドへ入る前のアクセス制御</td>
+        <td><code>origin.region_code == 'JP'</code> を許可、既定は <code>deny(403)</code></td>
+      </tr>
+      <tr>
+        <td><code>cloud_dns</code></td>
+        <td>独自ドメインと証明書 DNS 認証のレコード管理</td>
+        <td>A レコードと CNAME レコード、TTL は <code>300</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="design">
+  <h2>設計の要点</h2>
+  <p class="section-note">今回のテーマ内で、選択した理由だけを残す。</p>
+
+  <div class="card">
+    <h3>Ingress は <code>INTERNAL_ONLY</code> ではなく <code>INTERNAL_LOAD_BALANCER</code></h3>
+    <p>External Application Load Balancer を Cloud Run の入口にするため、LB 経由を許可する Ingress 値を選ぶ。<code>INTERNAL_ONLY</code> のままでは、この LB から Cloud Run へ届かない。</p>
+  </div>
+
+  <div class="card">
+    <h3>ブラウザ公開と直アクセス防止を、同じ設定に混ぜない</h3>
+    <p>Invoker の <code>allUsers</code> はブラウザからの呼び出しを成立させる設定であり、Ingress はどのネットワーク経路で届くかを制限する設定である。二つを合わせて、サービスアカウントをブラウザへ配らずに LB を唯一の入口にする。</p>
+  </div>
+
+  <div class="card">
+    <h3>作成・確認・削除までを一回の学習にする</h3>
+    <p>Cloud Run の最小インスタンスを 0 にしても、LB と Cloud Armor には時間課金がある。常設の運用を扱うテーマではないため、約 3 時間の確認を終えたら削除する。</p>
+  </div>
+</section>
+
+<section id="checks">
+  <h2>どう確認するか</h2>
+  <p class="section-note">先に <code>main/local.tf</code> のプロジェクト ID とドメインを自分の値へ置き換え、レジストラから Cloud DNS のネームサーバーへ委任してから apply する。</p>
+
+  <div class="card">
+    <h3>共通の準備</h3>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>PROJECT_ID=your-gcp-project-id
+DOMAIN=dev.your-domain.example
+LB_IP=$(gcloud compute addresses describe test-lb-ip --global --project="$PROJECT_ID" --format='value(address)')</code></pre>
+    </div>
+  </div>
+
+  <div class="card check" id="check-1">
+    <span class="tag">確認 1</span>
+    <h3>証明書・HTTPS・リダイレクトを確認する</h3>
+    <p>DNS 認証済みの証明書が有効になり、HTTP が HTTPS へ集約されていることを確かめる。 <a class="link-back" href="#learn-1">↑ 学び 1</a></p>
+
+    <div class="step-label">手順</div>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>gcloud certificate-manager certificates describe test-lb-cert --location=global --project="$PROJECT_ID" --format='value(managed.state)'
+curl -sI --resolve "$DOMAIN:80:$LB_IP" "http://$DOMAIN/"
+curl -sI --resolve "$DOMAIN:443:$LB_IP" "https://$DOMAIN/"</code></pre>
+    </div>
+
+    <div class="step-label">期待される結果</div>
+    <div class="expect">
+      <ul>
+        <li>証明書の状態が <code>ACTIVE</code> になる。</li>
+        <li>HTTP の応答は <code>301</code>、<code>Location</code> は HTTPS の URL になる。</li>
+        <li>日本国内の IP から HTTPS へアクセスすると <code>200</code> になる。</li>
+      </ul>
+    </div>
+
+    <div class="step-label">これでわかること</div>
+    <div class="insight">証明書と HTTP→HTTPS の処理は Cloud Run コンテナではなく、ロードバランサーの入口で完結している。</div>
+  </div>
+
+  <div class="card check" id="check-2">
+    <span class="tag">確認 2</span>
+    <h3>LB 経由と既定 URL を比較する</h3>
+    <p>Invoker が公開でも、インターネットからの直アクセスを Ingress で止められていることを確かめる。 <a class="link-back" href="#learn-2">↑ 学び 2</a></p>
+
+    <div class="step-label">手順</div>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>SERVICE_URL=$(gcloud run services describe test-cloud-run-service --region=asia-northeast1 --project="$PROJECT_ID" --format='value(status.url)')
+curl -s -o /dev/null -w 'run.app: %{http_code}\n' "$SERVICE_URL"
+curl -s -o /dev/null -w 'LB: %{http_code}\n' --resolve "$DOMAIN:443:$LB_IP" "https://$DOMAIN/"</code></pre>
+    </div>
+
+    <div class="step-label">期待される結果</div>
+    <div class="expect">
+      <ul>
+        <li><code>run.app</code> の既定 URL は 2xx にならない。</li>
+        <li>日本国内の IP からの LB 経由は <code>200</code> になる。</li>
+        <li>2 つの違いは IAM ではなく、Ingress が許可する経路で生じる。</li>
+      </ul>
+    </div>
+
+    <div class="step-label">これでわかること</div>
+    <div class="insight">認証を要求しない Cloud Run でも、LB を経由する公開経路だけを残せる。ブラウザにサービスアカウントを持たせる必要はない。</div>
+  </div>
+
+  <div class="card check" id="check-3">
+    <span class="tag">確認 3</span>
+    <h3>国内外で応答を比べる</h3>
+    <p>Cloud Armor の国別条件が、Cloud Run に届く前に結果を分けることを確かめる。 <a class="link-back" href="#learn-3">↑ 学び 3</a></p>
+
+    <div class="step-label">手順</div>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>gcloud compute security-policies describe test-cloud-armor-security-policy --global --project="$PROJECT_ID" --format='yaml(rules)'
+curl -s -o /dev/null -w '%{http_code}\n' --resolve "$DOMAIN:443:$LB_IP" "https://$DOMAIN/"</code></pre>
+    </div>
+    <p>上の <code>curl</code> を日本国内の回線と日本国外の回線で一度ずつ実行する。</p>
+
+    <div class="step-label">期待される結果</div>
+    <div class="expect">
+      <ul>
+        <li>ポリシーには優先度 100 の JP 許可ルールと既定の <code>deny(403)</code> が表示される。</li>
+        <li>日本国内の回線は <code>200</code>、日本国外の回線は <code>403</code> になる。</li>
+      </ul>
+    </div>
+
+    <div class="step-label">これでわかること</div>
+    <div class="insight">Cloud Armor はバックエンドサービスに関連付けることで、Cloud Run に到達する前に通過可否を決める。国コードは本人確認ではない。</div>
+  </div>
+</section>
+
+<section id="pitfalls">
+  <h2>後始末とつまずき</h2>
+
+  <div class="card pitfall">
+    <h3>後始末：課金を止める</h3>
+    <p>Cloud Run の最小インスタンスを 0 にしても、External Application Load Balancer、Cloud Armor、Cloud DNS ゾーンは残している間に費用が発生する。</p>
+    <div class="code">
+      <button class="copy">copy</button>
+      <pre><code>terraform -chdir=architectures/01/main destroy
+gcloud compute forwarding-rules describe fwdrule-test-https --global --project="$PROJECT_ID"
+gcloud dns managed-zones describe example-zone --project="$PROJECT_ID"</code></pre>
+    </div>
+    <p>destroy 後、後ろの二つは <code>NOT_FOUND</code> になればよい。ドメイン登録事業者で設定したネームサーバーは Terraform 管理外なので、戻すかどうかを別途判断する。</p>
+  </div>
+
+  <div class="card pitfall">
+    <h3>Cloud DNS ゾーンを作っただけでは証明書を発行できない</h3>
+    <p>Terraform はゾーン内の A/CNAME レコードを作るが、登録済みドメインをそのゾーンへ委任する操作は含まれない。証明書が <code>ACTIVE</code> にならないときは、DNS 委任と認証用 CNAME を先に確認する。</p>
+  </div>
+</section>
+
+<section id="selfcheck">
+  <h2>理解度チェック</h2>
+  <p class="section-note">設定値を覚えたかではなく、理由を自分の言葉で説明できるかを問う。チェック状態はこのブラウザに保存される。</p>
+  <div class="card">
+    <ul class="selfcheck">
+      <li><input type="checkbox" data-key="sc-1"><span>独自ドメインの HTTPS を LB で受け、Serverless NEG で Cloud Run へつなぐ理由を説明できる。</span></li>
+      <li><input type="checkbox" data-key="sc-2"><span><code>allUsers</code> の Invoker と <code>INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER</code> が、別の役割を持つことを説明できる。</span></li>
+      <li><input type="checkbox" data-key="sc-3"><span>Cloud Armor の国コード条件で分かることと、分からないことを説明できる。</span></li>
+      <li><input type="checkbox" data-key="sc-4"><span>最小インスタンスが 0 でも、このテーマで destroy が必要な理由を説明できる。</span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="refs">
+  <h2>参考リンクと関連テーマ</h2>
+  <div class="card">
+    <ul class="links">
+      <li><a href="README.md">Architecture 01 README</a><br><span class="desc">このテーマの設計判断、短時間検証の費用、対象範囲。</span></li>
+      <li><a href="https://cloud.google.com/load-balancing/docs/https/setting-up-https-serverless">Cloud Run をバックエンドにした External Application Load Balancer</a><br><span class="desc">Serverless NEG と External Application Load Balancer の構成を確認する。</span></li>
+      <li><a href="https://cloud.google.com/run/docs/securing/ingress">Cloud Run の Ingress 制御</a><br><span class="desc">LB 経由を許可し、既定 URL の直アクセスを拒否する条件を確認する。</span></li>
+      <li><a href="https://cloud.google.com/certificate-manager/docs/deploy-google-managed-dns-auth">Certificate Manager の DNS 認証</a><br><span class="desc">DNS 認証と証明書発行の前提を確認する。</span></li>
+      <li><a href="https://cloud.google.com/armor/docs/rules-language-reference">Cloud Armor のルール言語</a><br><span class="desc"><code>origin.region_code</code> が表すアクセス元の国・地域コードを確認する。</span></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  google-cloud-learning / architectures/01 — 生成日 2026-08-15<br>
+  このまとめは Terraform コード、README、git 履歴、Google Cloud 公式ドキュメントをもとに生成。<br>
+  コマンドの構文は公式 CLI リファレンスで確認済み。現在の作業環境には gcloud がないため、ここにある実行結果は未検証。
+</footer>
+
+</div>
+<script>
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.parentElement.querySelector('code');
+      navigator.clipboard.writeText(code.innerText).then(function () {
+        var prev = btn.textContent;
+        btn.textContent = 'copied';
+        setTimeout(function () { btn.textContent = prev; }, 1200);
+      });
+    });
+  });
+
+  var storeKey = 'arch-summary:' + location.pathname;
+  var saved = JSON.parse(localStorage.getItem(storeKey) || '{}');
+  document.querySelectorAll('.selfcheck input[data-key]').forEach(function (box) {
+    box.checked = !!saved[box.dataset.key];
+    box.addEventListener('change', function () {
+      saved[box.dataset.key] = box.checked;
+      localStorage.setItem(storeKey, JSON.stringify(saved));
+    });
+  });
+</script>
+</body>
+</html>
