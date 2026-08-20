@@ -1,0 +1,188 @@
+{
+  "version": 3,
+  "canvas": {
+    "width": 1600,
+    "height": 1000,
+    "grid_size": 10,
+    "background": "#FFFFFF"
+  },
+  "typography": {
+    "font_family": "Noto Sans JP,Arial,sans-serif",
+    "title_size": 20,
+    "boundary_size": 16,
+    "sub_boundary_size": 14,
+    "service_size": 13,
+    "address_size": 10,
+    "note_size": 11,
+    "text_color": "#202124",
+    "muted_text_color": "#5F6368"
+  },
+  "geometry": {
+    "outer_padding": 40,
+    "container_header": 50,
+    "container_padding": 30,
+    "node_gap": 30,
+    "icon_size": 48,
+    "card_padding_x": 20,
+    "card_padding_y": 14,
+    "card_icon_gap": 16,
+    "card_width": 280,
+    "card_height": 100,
+    "min_card_width": 260,
+    "min_card_height": 96,
+    "container_slack_warn": 170,
+    "label_inset": 16
+  },
+  "providers": {
+    "aws": {
+      "note": "Draw.io公式『AWS / Groups』パレット由来。maintenance/sync_upstream.pyが上流と同期するので手で編集しない",
+      "groups": {
+        "cloud": {"icon": "group_aws_cloud_alt", "stroke": "#232F3E", "font": "#232F3E", "dashed": false},
+        "account": {"icon": "group_account", "stroke": "#CD2264", "font": "#CD2264", "dashed": false},
+        "region": {"icon": "group_region", "stroke": "#00A4A6", "font": "#147EBA", "dashed": true},
+        "zone": {"icon": null, "stroke": "#147EBA", "font": "#147EBA", "dashed": true},
+        "network": {"icon": "group_vpc2", "stroke": "#8C4FFF", "font": "#AAB7B8", "dashed": false},
+        "public_subnet": {"icon": "group_security_group", "stroke": "#7AA116", "font": "#248814", "fill": "#F2F6E8", "borderless": true},
+        "private_subnet": {"icon": "group_security_group", "stroke": "#00A4A6", "font": "#147EBA", "fill": "#E6F6F7", "borderless": true},
+        "external": {"icon": "group_corporate_data_center", "stroke": "#7D8998", "font": "#5A6C86", "dashed": false}
+      },
+      "group_overrides": {
+        "note": "可読性のための意図的な上書き。sync_upstream.pyはここを触らない。networkの公式ラベル色#AAB7B8は白背景の14px太字では薄すぎる",
+        "network": {"font": "#5A6C86"}
+      }
+    },
+    "azure": {
+      "note": "draw.ioにもMS公式にも境界専用シェイプが無いため、汎用の境界規則をAzure配色で適用する",
+      "cloud_stroke": "#0078D4",
+      "cloud_fill": "#FFFFFF",
+      "subscription_stroke": "#5F6368",
+      "subscription_fill": "#FFFFFF",
+      "resource_group_stroke": "#5F6368",
+      "resource_group_fill": "#FFFFFF",
+      "region_stroke": "#9AA0A6",
+      "region_fill": "#FFFFFF",
+      "network_stroke": "#0078D4",
+      "network_fill": "#FFFFFF",
+      "subnet_fill": "#E6F2FA"
+    },
+    "gcp": {
+      "note": "Draw.io公式『GCP / Zones』の塗り。囲い線なし・角丸2pxの塗り領域で境界を表す",
+      "cloud_fill": "#F6F6F6",
+      "project_fill": "#FFFFFF",
+      "region_fill": "#F1F8E9",
+      "zone_fill": "#FFF8E1",
+      "network_fill": "#E1F5FE",
+      "subnet_fill": "#E0F2F1",
+      "cluster_fill": "#F3E5F5",
+      "namespace_fill": "#FFEBEE",
+      "onprem_fill": "#EFEBE9",
+      "group_stroke": "#BDC1C6",
+      "group_fill": "#FFFFFF"
+    },
+    "neutral": {
+      "stroke": "#5F6368",
+      "fill": "#F8F9FA",
+      "cloud_stroke": "#202124",
+      "cloud_fill": "#FFFFFF",
+      "region_stroke": "#1A73E8",
+      "zone_stroke": "#1A73E8",
+      "network_stroke": "#188038",
+      "public_subnet_fill": "#E6F4EA",
+      "private_subnet_fill": "#E8F0FE"
+    }
+  },
+  "card": {
+    "fill": "#FFFFFF",
+    "stroke": "#DADCE0",
+    "stroke_width": 1,
+    "corner_radius": 2,
+    "shadow": true
+  },
+  "edges": {
+    "traffic": {
+      "stroke": "#5F6368",
+      "width": 2,
+      "dashed": false,
+      "arrow": "block"
+    },
+    "async": {
+      "stroke": "#5F6368",
+      "width": 2,
+      "dashed": true,
+      "dash_pattern": "8 6",
+      "arrow": "block"
+    },
+    "peer": {
+      "stroke": "#5F6368",
+      "width": 2,
+      "dashed": false,
+      "arrow": "block",
+      "start_arrow": "block"
+    },
+    "control": {
+      "stroke": "#D97706",
+      "width": 1,
+      "dashed": false,
+      "arrow": "block"
+    },
+    "dependency": {
+      "stroke": "#9AA0A6",
+      "width": 1,
+      "dashed": true,
+      "dash_pattern": "1 3",
+      "arrow": "open"
+    },
+    "special": {
+      "stroke": "#1A73E8",
+      "width": 3,
+      "dashed": false,
+      "arrow": "block"
+    },
+    "unresolved": {
+      "stroke": "#F29900",
+      "width": 2,
+      "dashed": true,
+      "arrow": "block"
+    }
+  },
+  "edges_gcp": {
+    "note": "Draw.io公式『GCP / Paths』由来。maintenance/sync_upstream.pyが上流と同期するので手で編集しない。controlとspecialとunresolvedは共通規則のまま",
+    "traffic": {
+      "stroke": "#4284F3",
+      "width": 2,
+      "dashed": false,
+      "arrow": "blockThin",
+      "end_size": 4
+    },
+    "async": {
+      "stroke": "#4284F3",
+      "width": 2,
+      "dashed": true,
+      "dash_pattern": "1 3",
+      "arrow": "blockThin",
+      "end_size": 4
+    },
+    "peer": {
+      "stroke": "#4284F3",
+      "width": 2,
+      "dashed": false,
+      "arrow": "blockThin",
+      "start_arrow": "blockThin",
+      "end_size": 4
+    },
+    "dependency": {
+      "stroke": "#9E9E9E",
+      "width": 2,
+      "dashed": true,
+      "dash_pattern": "1 3",
+      "arrow": "blockThin",
+      "end_size": 4
+    }
+  },
+  "upstream": {
+    "note": "上流由来の値（providers.aws.groups、edges_gcp、providers.gcpの塗りの妥当性）の出典。maintenance/sync_upstream.py --checkで乖離を検出し、--writeで追従する",
+    "aws_sidebar": "https://raw.githubusercontent.com/jgraph/drawio/dev/src/main/webapp/js/diagramly/sidebar/Sidebar-AWS4.js",
+    "gcp_sidebar": "https://raw.githubusercontent.com/jgraph/drawio/dev/src/main/webapp/js/diagramly/sidebar/Sidebar-GCP2.js",
+    "verified": "2026-08-19"
+  }
+}

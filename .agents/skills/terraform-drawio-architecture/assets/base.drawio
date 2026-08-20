@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="terraform-drawio-architecture" version="1">
+  <diagram id="architecture" name="アーキテクチャ">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="layer-background" value="背景" parent="0"/>
+        <mxCell id="layer-boundaries" value="境界" parent="0"/>
+        <mxCell id="layer-resources" value="リソース" parent="0"/>
+        <mxCell id="layer-flows" value="通信経路" parent="0"/>
+        <mxCell id="layer-labels" value="ラベル" parent="0"/>
+        <mxCell id="layer-legend" value="凡例" parent="0"/>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

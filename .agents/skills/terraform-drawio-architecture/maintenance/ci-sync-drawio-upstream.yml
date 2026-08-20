@@ -1,0 +1,51 @@
+# このスキルを独立リポジトリ化したら、このファイルを .github/workflows/ へ置く。
+# （SKILL.md がリポジトリ直下にあるレイアウトを前提にパスを書いている。
+#   スキルがサブディレクトリにある場合は run: のパスに接頭辞を付けること）
+#
+# draw.io公式スタイル（AWS Groups / GCP Paths）とサイドバー埋め込みアイコンを週1回
+# jgraph/drawio上流と突き合わせ、乖離があればstyle-tokens.json / icon-styles.jsonを
+# 更新するPRを自動で立てる。マージするだけで追従が完了する。乖離が無い週は何も起きない。
+name: Sync draw.io upstream styles
+
+on:
+  schedule:
+    - cron: "0 21 * * 0" # 毎週月曜 6:00 JST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync style tokens with drawio upstream
+        run: sh scripts/run_python.sh maintenance/sync_upstream.py --write
+
+      - name: Sync sidebar icons with drawio upstream
+        run: sh scripts/run_python.sh maintenance/sync_sidebar_icons.py
+
+      - name: Self test
+        run: sh scripts/run_python.sh scripts/self_test.py
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/sync-drawio-upstream
+          delete-branch: true
+          commit-message: "chore: draw.io公式スタイルの上流追従"
+          title: "chore: draw.io公式スタイルの上流追従"
+          body: |
+            `sync_upstream.py` が jgraph/drawio の公式パレット変更を検出したため、
+            `style-tokens.json` を上流へ追従させました（self_test は通過済み）。
+
+            マージ前の確認:
+            - [ ] 差分の色・grIconが意図的な世代交代に見えるか
+            - [ ] サンプル図を再生成してプレビューを目視したか

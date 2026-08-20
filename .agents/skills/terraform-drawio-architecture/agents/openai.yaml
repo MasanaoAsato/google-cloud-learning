@@ -1,0 +1,4 @@
+interface:
+  display_name: "Terraform Draw.io アーキテクチャ"
+  short_description: "Terraformから一貫したクラウド構成図を生成・更新"
+  default_prompt: "Use $terraform-drawio-architecture to Terraformコードから編集可能なdraw.io構成図とSVGを作成してください。"

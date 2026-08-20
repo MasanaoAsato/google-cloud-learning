@@ -1,0 +1,14 @@
+terraform-drawio-architecture
+Copyright 2026 Asato Masanao
+
+This skill was developed with AI assistance (Anthropic Claude).
+
+This product bundles icon data (in assets/icon-styles.json) derived from
+the icon sets and stencil libraries of draw.io (diagrams.net), jointly
+owned and developed by draw.io Ltd and draw.io AG
+(https://github.com/jgraph/drawio). The draw.io source code is licensed
+under the Apache License, Version 2.0; the icon sets and stencil
+libraries are provided under separate terms, quoted in full in
+THIRD-PARTY-NOTICES.md together with trademark notices covering the
+Amazon Web Services, Microsoft Azure, and Google Cloud product icons
+that the bundled data visually represents.
