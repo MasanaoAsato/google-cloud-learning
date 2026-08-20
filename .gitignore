@@ -36,9 +36,19 @@ override.tf.json
 .terraformrc
 terraform.rc
 
-# Ignore draw.io files
-*.drawio
-
 # Ignore IDE specific files
 .vscode/
 .agent/rules/
+
+# Ignore draw.io files
+*.drawio
+architectures/**/architecture.drawio
+!.agents/skills/terraform-drawio-architecture/assets/base.drawio
+
+# architecture
+/**/architecture-diagram.json
+**/architecture-notes.md
+
+
+# Ignore Python bytecode caches
+__pycache__/

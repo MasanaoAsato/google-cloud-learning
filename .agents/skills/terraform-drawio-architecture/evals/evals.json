@@ -1,0 +1,18 @@
+{
+  "skill_name": "terraform-drawio-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "既存の Azure architecture-diagram.json から architecture.drawio を再生成し、Resource Group、Region、Virtual Network、Subnet の入れ子境界を縮小表示でも判別できるスタイルにしてください。",
+      "expected_output": "隣接する境界が線色、線幅、破線パターン、塗りのうち最低2軸で区別され、外側ほど枠線が太く、subnetが塗りのみで表された architecture.drawio とプレビュー画像",
+      "files": [
+        "evals/fixtures/architecture-diagram.json"
+      ],
+      "expectations": [
+        "The output remains valid draw.io XML and preserves every target Azure boundary.",
+        "Every adjacent Resource Group, Region, VNet, and Subnet boundary differs on at least two visual axes.",
+        "Azure boundary colors, widths, and dash patterns match the documented hierarchy tokens."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>terraform-drawio-architecture 更新手順</title>
+<style>
+  body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; line-height: 1.7;
+         max-width: 860px; margin: 2rem auto; padding: 0 1rem; color: #202124; }
+  h1 { font-size: 1.5rem; border-bottom: 2px solid #1A73E8; padding-bottom: .4rem; }
+  h2 { font-size: 1.15rem; margin-top: 2rem; border-left: 4px solid #1A73E8; padding-left: .5rem; }
+  code, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; background: #F1F3F4;
+              border-radius: 4px; }
+  code { padding: .1em .35em; font-size: .9em; }
+  pre { padding: .8em 1em; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+  th, td { border: 1px solid #DADCE0; padding: .45em .6em; text-align: left; vertical-align: top; }
+  th { background: #F8F9FA; }
+  .ok { color: #188038; } .ng { color: #C5221F; }
+  .note { background: #FEF7E0; border-left: 4px solid #F29900; padding: .6em .9em; border-radius: 0 4px 4px 0; }
+</style>
+</head>
+<body>
+
+<h1>terraform-drawio-architecture 更新手順</h1>
+
+<p>このスキルは draw.io 公式のスタイル（AWS Groups / GCP Zones・Paths）とアイコン定義を
+スナップショットとして同梱している。生成時にネットワークは使わない（図の再現性のため）。
+上流の世代交代への追従は、以下の手順で行う。</p>
+
+<h2>1. 何がどこにあり、どう更新するか</h2>
+
+<table>
+  <tr><th>更新対象</th><th>置き場所</th><th>更新方法</th></tr>
+  <tr>
+    <td>AWS Groups の色・grIcon、GCP Paths の線</td>
+    <td><code>assets/style-tokens.json</code> の <code>providers.aws.groups</code> と <code>edges_gcp</code></td>
+    <td><code>maintenance/sync_upstream.py</code>（手で編集しない）</td>
+  </tr>
+  <tr>
+    <td>アイコンカタログ（製品アイコン・Stencil）</td>
+    <td><code>assets/icon-styles.json</code></td>
+    <td><code>scripts/icon_catalog.py --harvest</code> と <code>maintenance/render_stencils.py</code></td>
+  </tr>
+  <tr>
+    <td>スキル独自の規約（寸法、汎用境界、線の6種別、Azure配色）</td>
+    <td><code>assets/style-tokens.json</code> の残り全部</td>
+    <td>手で編集してよい（上流が無い＝乖離しない）</td>
+  </tr>
+</table>
+
+<h2>2. draw.io 公式パレットへの追従（週次 or 気になったとき）</h2>
+
+<p>Python 3.10以降が必要です。<code>scripts/run_python.sh</code> は、環境にある
+<code>python3</code>または<code>python</code>を選んで実行します。</p>
+
+<pre>sh scripts/run_python.sh maintenance/sync_upstream.py          # 乖離チェックのみ（乖離ありなら終了コード2）
+sh scripts/run_python.sh maintenance/sync_upstream.py --write  # style-tokens.json を上流へ追従
+sh scripts/run_python.sh scripts/self_test.py                  # 回帰テスト
+# 最後にサンプル図を再生成してプレビューを目視する（色の世代交代は目で確認）</pre>
+
+<p>出典URLと最終検証日は <code>style-tokens.json</code> の <code>upstream</code> にある。
+可読性のための意図的な逸脱（例: VPCラベル色）は <code>providers.aws.group_overrides</code> に
+置いてあり、sync はここを触らない。</p>
+
+<h2>3. 自動化（推奨・独立リポジトリ化後）</h2>
+
+<p><code>maintenance/ci-sync-drawio-upstream.yml</code> を独立リポジトリの
+<code>.github/workflows/</code> へ置くと、週1回 sync が走り、
+<span class="ok">乖離があった週だけ PR が自動で立つ</span>。
+self_test 通過済みなので、<strong>差分を見てマージするだけ</strong>で追従が完了する。
+利用者側への配布は skills.sh の <code>npx skills update</code> が担う。</p>
+
+<h2>4. アイコンが足りないとき</h2>
+
+<pre># カタログに無いサービス: Draw.io で実際に置いた図から取り込む
+sh scripts/run_python.sh scripts/icon_catalog.py --harvest &lt;その.drawio&gt;
+
+# SVG書き出しが「no pre-rendered SVG for ...」で失敗: 事前レンダリングを追加
+sh scripts/run_python.sh maintenance/render_stencils.py            # alias から到達できる全シェイプ
+sh scripts/run_python.sh maintenance/render_stencils.py gcp2/users # 特定シェイプのみ</pre>
+
+<h2>5. やってはいけないこと</h2>
+
+<ul>
+  <li class="ng"><code>providers.aws.groups</code> / <code>edges_gcp</code> を手で編集する（sync が上書きする。逸脱は <code>group_overrides</code> へ）</li>
+  <li class="ng">生成スクリプトに上流フェッチを組み込む（オフラインで壊れ、同じ仕様から違う図が出る）</li>
+  <li class="ng">style 文字列を推測で書く（draw.io では空の四角になる。必ず harvest か sync を通す）</li>
+</ul>
+
+<div class="note">
+公開・パッケージ前のチェックリスト:
+<code>find . -name __pycache__ -exec rm -rf {} +</code> で削除し、
+個人情報・社内情報が無いことを確認する（メール、社員ID、絶対パス、プロジェクトID）。
+</div>
+
+</body>
+</html>
