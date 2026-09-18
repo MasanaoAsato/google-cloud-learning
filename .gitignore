@@ -52,3 +52,5 @@ architectures/**/architecture.drawio
 
 # Ignore Python bytecode caches
 __pycache__/
+
+.agents/skills/reviewsec
